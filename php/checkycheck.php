@@ -1,5 +1,13 @@
 <?php
 
+$ncpu = 1;
+
+if (is_file('/proc/cpuinfo')) {
+    $cpuinfo = file_get_contents('/proc/cpuinfo');
+    preg_match_all('/^processor/m', $cpuinfo, $matches);
+    $ncpu = count($matches[0]);
+}
+
 $cpuLoad = getServerLoad();
 if (is_null($cpuLoad)) {
     echo "CPU load not estimateable (maybe too old Windows or missing rights at Linux or Windows)";
@@ -11,6 +19,7 @@ $memory = getSystemMemInfo();
 
 $data = array();
 $data['cpu'] = $cpuLoad;
+$data['cores'] = $ncpu;
 $data['user_id'] = $argv[1];
 $data['load_1'] = sys_getloadavg()[0];
 $data['load_5'] = sys_getloadavg()[1];
