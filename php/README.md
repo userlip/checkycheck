@@ -3,7 +3,7 @@
 ## Automatic
 
 ```
-curl ... > /root/checkycheck.php && crontab -l | { cat; echo "* * * * * php /root/checkycheck.php YOUR_USER_ID"; } | crontab -
+curl https://raw.githubusercontent.com/userlip/checkycheck/main/php/checkycheck.php > /root/checkycheck.php && crontab -l | { cat; echo "* * * * * php /root/checkycheck.php YOUR_USER_ID"; } | crontab -
 ```
 
 **Please do not forget to replace YOUR_USER_ID with your actual checkycheck user ID which you can find at: Checkycheck -> Servers -> Installation**
@@ -14,7 +14,7 @@ curl ... > /root/checkycheck.php && crontab -l | { cat; echo "* * * * * php /roo
 1. Download the PHP Script
 
 ```
-curl ... > /root/checkycheck.php
+curl https://raw.githubusercontent.com/userlip/checkycheck/main/php/checkycheck.php > /root/checkycheck.php
 ```
 
 2. Install the cron
