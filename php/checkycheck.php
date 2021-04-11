@@ -1,47 +1,65 @@
 <?php
 
-$ncpu = 1;
+$max_cycles = $argv[2] ?? 1;
+$cycles = 0;
 
-if (is_file('/proc/cpuinfo')) {
-    $cpuinfo = file_get_contents('/proc/cpuinfo');
-    preg_match_all('/^processor/m', $cpuinfo, $matches);
-    $ncpu = count($matches[0]);
+if($max_cycles > 30) {
+    die("More than 30 cycles are not allowed!");
+} 
+
+while (true) {
+
+    $ncpu = 1;
+
+    if (is_file('/proc/cpuinfo')) {
+        $cpuinfo = file_get_contents('/proc/cpuinfo');
+        preg_match_all('/^processor/m', $cpuinfo, $matches);
+        $ncpu = count($matches[0]);
+    }
+
+    $cpuLoad = getServerLoad();
+    if (is_null($cpuLoad)) {
+        echo "CPU load not estimateable (maybe too old Windows or missing rights at Linux or Windows)";
+    } else {
+        echo "CPU: " . $cpuLoad . "%" . PHP_EOL;
+    }
+
+    $memory = getSystemMemInfo();
+
+    $data = array();
+    $data['cpu'] = $cpuLoad;
+    $data['cores'] = $ncpu;
+    $data['user_id'] = $argv[1];
+    $data['load_1'] = sys_getloadavg()[0];
+    $data['load_5'] = sys_getloadavg()[1];
+    $data['load_15'] = sys_getloadavg()[2];
+    $data['ram_used'] = ($memory['MemTotal'] * 1000) - ($memory['MemAvailable'] * 1000); // RAM info is in kB -> Convert to bytes
+    $data['ram_free'] = $memory['MemAvailable'] * 1000;
+    $data['storage_used'] = disk_total_space('/') - disk_free_space('/');
+    $data['storage_free'] = disk_free_space('/');
+
+    $options = array(
+        'http' => array(
+            'method'  => 'POST',
+            'content' => json_encode($data),
+            'header' =>  "Content-Type: application/json\r\n" .
+                "Accept: application/json\r\n"
+        )
+    );
+
+    $url = 'https://checkycheck.io/api/server/info';
+    $context  = stream_context_create($options);
+    $result = file_get_contents($url, false, $context);
+    $response = json_decode($result);
+
+    $cycles++;
+
+    if ($cycles >= $max_cycles) {
+        exit();
+    }
+
+    sleep(2);
 }
-
-$cpuLoad = getServerLoad();
-if (is_null($cpuLoad)) {
-    echo "CPU load not estimateable (maybe too old Windows or missing rights at Linux or Windows)";
-} else {
-    echo "CPU: " . $cpuLoad . "%" . PHP_EOL;
-}
-
-$memory = getSystemMemInfo();
-
-$data = array();
-$data['cpu'] = $cpuLoad;
-$data['cores'] = $ncpu;
-$data['user_id'] = $argv[1];
-$data['load_1'] = sys_getloadavg()[0];
-$data['load_5'] = sys_getloadavg()[1];
-$data['load_15'] = sys_getloadavg()[2];
-$data['ram_used'] = ($memory['MemTotal'] * 1000) - ($memory['MemAvailable'] * 1000); // RAM info is in kB -> Convert to bytes
-$data['ram_free'] = $memory['MemAvailable'] * 1000;
-$data['storage_used'] = disk_total_space('/') - disk_free_space('/');
-$data['storage_free'] = disk_free_space('/');
-
-$options = array(
-    'http' => array(
-        'method'  => 'POST',
-        'content' => json_encode($data),
-        'header' =>  "Content-Type: application/json\r\n" .
-            "Accept: application/json\r\n"
-    )
-);
-
-$url = 'https://checkycheck.io/api/server/info';
-$context  = stream_context_create($options);
-$result = file_get_contents($url, false, $context);
-$response = json_decode($result);
 
 // CPU (https://www.php.net/manual/de/function.sys-getloadavg.php#118673)
 //--------------------------
